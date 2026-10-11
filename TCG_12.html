@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オリジナルTCG マネージャー</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+        }
+        .card-glow {
+            box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.2);
+        }
+        .tcg-card-frame {
+            aspect-ratio: 3 / 4;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 py-3 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                    <i data-lucide="layers" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-wide bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">TCG Manager</h1>
+                    <p class="text-xs text-slate-400">オリジナルカード＆デッキ管理</p>
+                </div>
+            </div>
+
+            <!-- ナビゲーションタブ -->
+            <div class="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+                <button id="tab-cards" onclick="switchTab('cards')" class="px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 bg-indigo-600 text-white shadow">
+                    <i data-lucide="grid" class="w-4 h-4"></i>
+                    <span>カード一覧</span>
+                </button>
+                <button id="tab-decks" onclick="switchTab('decks')" class="px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                    <span>デッキ一覧</span>
+                </button>
+            </div>
+
+            <!-- 接続ステータス -->
+            <div class="flex items-center space-x-3">
+                <div id="connection-status" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-full text-xs font-medium">
+                    <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span id="status-text" class="text-slate-300">接続中...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
+
+        <!-- ==================== カード管理ビュー ==================== -->
+        <div id="view-cards" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80 backdrop-blur">
+                <div class="relative flex-1 w-full sm:max-w-md">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                    <input type="text" id="card-search" placeholder="カード名や効果テキストで検索..." 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition">
+                </div>
+                <button onclick="openCardModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>新規カード作成</span>
+                </button>
+            </div>
+
+            <!-- カード一覧グリッド -->
+            <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- 動的生成 -->
+            </div>
+        </div>
+
+        <!-- ==================== デッキ管理ビュー ==================== -->
+        <div id="view-decks" class="space-y-6 hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80 backdrop-blur">
+                <div>
+                    <h2 class="text-lg font-bold">デッキビルダー</h2>
+                    <p class="text-xs text-slate-400">50枚固定のデッキを作成して管理できます</p>
+                </div>
+                <button onclick="openDeckModal()" class="w-full sm:w-auto bg-pink-600 hover:bg-pink-500 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-pink-600/30 flex items-center justify-center space-x-2 transition">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>新規デッキ作成</span>
+                </button>
+            </div>
+
+            <!-- デッキ一覧グリッド -->
+            <div id="decks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 動的生成 -->
+            </div>
+        </div>
+    </main>
+
+    <!-- ==================== カード詳細確認 モーダル ==================== -->
+    <div id="card-detail-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl relative flex flex-col">
+            <button onclick="closeCardDetailModal()" class="absolute top-4 right-4 z-10 p-2 bg-slate-950/80 hover:bg-slate-800 rounded-full text-slate-300 transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="w-full h-[25rem] bg-slate-950 flex items-center justify-center relative overflow-hidden p-3 border-b border-slate-800">
+                <img id="detail-modal-image" src="" class="h-full object-contain hidden rounded-lg" alt="カード画像">
+                <div id="detail-modal-placeholder" class="text-slate-600 flex flex-col items-center justify-center space-y-2">
+                    <i data-lucide="image" class="w-16 h-16"></i>
+                    <span class="text-xs">画像なし</span>
+                </div>
+                <div class="absolute top-3 left-3 flex space-x-2">
+                    <span id="detail-modal-rarity" class="px-2.5 py-1 rounded-md text-xs font-extrabold bg-indigo-600 text-white shadow">C</span>
+                    <span id="detail-modal-cost" class="px-2.5 py-1 rounded-md text-xs font-bold bg-slate-900 text-slate-200 border border-slate-700 shadow">コスト: 1</span>
+                </div>
+            </div>
+
+            <div class="p-5 space-y-4 bg-slate-900">
+                <div class="flex justify-between items-center">
+                    <h3 id="detail-modal-name" class="text-lg font-extrabold text-white">カード名</h3>
+                    <span id="detail-modal-attribute" class="text-xs font-bold px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/30">火</span>
+                </div>
+                
+                <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 min-h-[5rem]">
+                    <p class="text-[10px] font-bold text-slate-400 mb-1">説明文 / 効果</p>
+                    <p id="detail-modal-desc" class="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">効果テキストがここに表示されます。</p>
+                </div>
+
+                <div class="flex justify-between items-center pt-1">
+                    <div id="detail-modal-stats" class="text-xs font-extrabold text-amber-400 bg-amber-400/10 px-3 py-1 rounded-lg border border-amber-400/20">
+                        パワー: -
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="detail-edit-btn" onclick="" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                            <span>編集</span>
+                        </button>
+                        <button id="detail-delete-btn" onclick="" class="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-xl text-xs font-bold transition flex items-center space-x-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>削除</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800 flex justify-end">
+                    <button onclick="closeCardDetailModal()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold tracking-widest transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/30 cursor-pointer">
+                        <i data-lucide="x-circle" class="w-4 h-4"></i>
+                        <span>CLOSE VIEW</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== カード作成/編集 モーダル ==================== -->
+    <div id="card-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 id="card-modal-title" class="text-lg font-bold text-indigo-400">新規カード作成</h3>
+                <button onclick="closeCardModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+
+            <form id="card-form" onsubmit="saveCard(event)" class="space-y-4">
+                <input type="hidden" id="card-id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">カード名</label>
+                        <input type="text" id="input-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">属性</label>
+                        <select id="input-attribute" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="火">火</option>
+                            <option value="水">水</option>
+                            <option value="草">草</option>
+                            <option value="土">土</option>
+                            <option value="風">風</option>
+                            <option value="雷">雷</option>
+                            <option value="光">光</option>
+                            <option value="闇">闇</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">レアリティ</label>
+                        <select id="input-rarity" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="C">C (コモン)</option>
+                            <option value="UC">UC (アンコモン)</option>
+                            <option value="R">R (レア)</option>
+                            <option value="SR">SR (スーパーレア)</option>
+                            <option value="UR">UR (ウルトラレア)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">コスト</label>
+                        <input type="number" id="input-cost" min="0" value="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">パワー</label>
+                        <input type="number" id="input-power" placeholder="例: 300" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">カード説明文 / 効果</label>
+                    <textarea id="input-desc" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">カード画像 (.png / .jpg)</label>
+                    <input type="file" id="input-image" accept="image/png, image/jpeg" onchange="previewCardImage(event)" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
+                    <div class="mt-2 flex justify-center bg-slate-950 border border-slate-800 rounded-xl p-2 h-36">
+                        <img id="image-preview" src="" class="max-h-full object-contain hidden" alt="プレビュー">
+                        <span id="image-preview-placeholder" class="text-xs text-slate-600 self-center">画像プレビュー</span>
+                    </div>
+                    <input type="hidden" id="input-image-base64">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+                    <button type="button" onclick="closeCardModal()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 hover:bg-slate-700 font-bold transition">キャンセル</button>
+                    <button type="submit" class="px-6 py-2 rounded-xl text-sm bg-indigo-600 hover:bg-indigo-500 font-bold shadow-lg shadow-indigo-600/30 transition">保存する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== デッキ作成/編集 モーダル ==================== -->
+    <div id="deck-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto p-6 space-y-5 shadow-2xl">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-4">
+                <div>
+                    <h3 id="deck-modal-title" class="text-lg font-bold text-pink-400">デッキビルダー (50枚固定)</h3>
+                    <p class="text-xs text-slate-400">カードをクリックしてデッキに追加・削除できます</p>
+                </div>
+                <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
+                    <button type="button" onclick="closeDeckModal()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 hover:bg-slate-700 font-bold transition">キャンセル</button>
+                    <button id="deck-save-btn" onclick="saveDeck()" disabled class="px-6 py-2 rounded-xl text-sm bg-slate-700 text-slate-400 font-bold cursor-not-allowed transition shadow-lg">50枚で保存可能</button>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <input type="hidden" id="deck-id">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">デッキ名</label>
+                        <input type="text" id="deck-name" placeholder="例: 炎の高速アグロデッキ" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-pink-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">作成者</label>
+                        <input type="text" id="deck-author" placeholder="例: プレイヤー名" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-pink-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 mb-1">デッキ説明欄 / 戦術・コンセプト</label>
+                        <textarea id="deck-desc" rows="2" placeholder="デッキの回し方や特徴を記載..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-pink-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">デッキ用画像</label>
+                        <input type="file" id="deck-image-input" accept="image/png, image/jpeg" onchange="previewDeckImage(event)" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
+                        <input type="hidden" id="deck-image-base64">
+                    </div>
+                </div>
+
+                <!-- 枚数カウンター -->
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <span class="text-xs text-slate-400">現在のデッキ枚数：</span>
+                        <span id="deck-count-display" class="text-xl font-extrabold text-pink-400">0</span>
+                        <span class="text-xs text-slate-400"> / 50枚</span>
+                    </div>
+                    <div id="deck-validation-msg" class="text-xs font-bold text-amber-400">あと50枚必要です</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-80">
+                    <!-- 所持カードプール -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col space-y-2">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-xs font-bold text-slate-400">カードプール</h4>
+                        </div>
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500"></i>
+                            <input type="text" id="deck-pool-search" placeholder="カード名で検索..." oninput="renderDeckBuilderPool()"
+                                class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:border-pink-500 transition">
+                        </div>
+                        <div id="deck-card-pool" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                            <!-- 動的生成 -->
+                        </div>
+                    </div>
+                    <!-- デッキ内カードリスト -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col">
+                        <h4 class="text-xs font-bold text-slate-400 mb-2">デッキ内カード (クリックして削除)</h4>
+                        <div id="deck-selected-list" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                            <!-- 動的生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Modular CDN) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            onSnapshot, 
+            addDoc, 
+            updateDoc, 
+            deleteDoc, 
+            doc, 
+            initializeFirestore,
+            persistentLocalCache,
+            persistentMultipleTabManager
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyKeyForTemplate-ExampleOnly12345",
+            authDomain: "tcg-manager-demo.firebaseapp.com",
+            projectId: "tcg-manager-demo",
+            storageBucket: "tcg-manager-demo.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef"
+        };
+
+        let db;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    tabManager: persistentMultipleTabManager()
+                })
+            });
+            updateConnectionStatus(true, "オンライン (同期中)");
+        } catch (e) {
+            console.warn("Firebase initialization warning/fallback:", e);
+            updateConnectionStatus(false, "オフライン/ローカルモード");
+        }
+
+        window.cards = [];
+        window.decks = [];
+        window.currentDeckCards = [];
+
+        window.initFirestoreListeners = function() {
+            if (!db) return;
+
+            onSnapshot(collection(db, "cards"), (snapshot) => {
+                window.cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderCards();
+                if(!document.getElementById('deck-modal').classList.contains('hidden')) {
+                    renderDeckBuilderPool();
+                }
+                updateConnectionStatus(true, "オンライン同期完了");
+            }, (error) => {
+                console.error("Card sync error:", error);
+                updateConnectionStatus(false, "オフライン (キャッシュ利用)");
+            });
+
+            onSnapshot(collection(db, "decks"), (snapshot) => {
+                window.decks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderDecks();
+            }, (error) => {
+                console.error("Deck sync error:", error);
+            });
+        };
+
+        window.saveCardToFirestore = async function(cardData, cardId) {
+            if (!db) {
+                alert("データベースに接続されていません。");
+                return;
+            }
+            try {
+                if (cardId) {
+                    await updateDoc(doc(db, "cards", cardId), cardData);
+                } else {
+                    await addDoc(collection(db, "cards"), cardData);
+                }
+                closeCardModal();
+            } catch (e) {
+                console.error("Error saving card: ", e);
+                alert("保存に失敗しました。");
+            }
+        };
+
+        window.deleteCardFromFirestore = async function(cardId) {
+            if (!db || !confirm("このカードを削除しますか？")) return;
+            try {
+                await deleteDoc(doc(db, "cards", cardId));
+                closeCardDetailModal();
+            } catch (e) {
+                console.error("Error deleting card: ", e);
+            }
+        };
+
+        window.saveDeckToFirestore = async function(deckData, deckId) {
+            if (!db) return;
+            try {
+                if (deckId) {
+                    await updateDoc(doc(db, "decks", deckId), deckData);
+                } else {
+                    await addDoc(collection(db, "decks"), deckData);
+                }
+                closeDeckModal();
+            } catch (e) {
+                console.error("Error saving deck: ", e);
+            }
+        };
+
+        window.deleteDeckFromFirestore = async function(deckId) {
+            if (!db || !confirm("このデッキを削除しますか？")) return;
+            try {
+                await deleteDoc(doc(db, "decks", deckId));
+            } catch (e) {
+                console.error("Error deleting deck: ", e);
+            }
+        };
+
+        initFirestoreListeners();
+    </script>
+
+    <!-- UI制御・ロジック -->
+    <script>
+        lucide.createIcons();
+
+        function updateConnectionStatus(isOnline, text) {
+            const dot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            if (isOnline) {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+                statusText.textContent = text;
+            } else {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse";
+                statusText.textContent = text;
+            }
+        }
+
+        function switchTab(tabName) {
+            const cardsView = document.getElementById('view-cards');
+            const decksView = document.getElementById('view-decks');
+            const tabCards = document.getElementById('tab-cards');
+            const tabDecks = document.getElementById('tab-decks');
+
+            if (tabName === 'cards') {
+                cardsView.classList.remove('hidden');
+                decksView.classList.add('hidden');
+                tabCards.className = "px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 bg-indigo-600 text-white shadow";
+                tabDecks.className = "px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white";
+            } else {
+                cardsView.classList.add('hidden');
+                decksView.classList.remove('hidden');
+                tabDecks.className = "px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 bg-pink-600 text-white shadow";
+                tabCards.className = "px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white";
+            }
+            lucide.createIcons();
+        }
+
+        // --- カード詳細確認モーダル ---
+        function openCardDetailModal(cardId) {
+            const card = window.cards.find(c => c.id === cardId);
+            if (!card) return;
+
+            const modal = document.getElementById('card-detail-modal');
+            const imgEl = document.getElementById('detail-modal-image');
+            const placeholderEl = document.getElementById('detail-modal-placeholder');
+            
+            if (card.image) {
+                imgEl.src = card.image;
+                imgEl.classList.remove('hidden');
+                placeholderEl.classList.add('hidden');
+            } else {
+                imgEl.src = '';
+                imgEl.classList.add('hidden');
+                placeholderEl.classList.remove('hidden');
+            }
+
+            document.getElementById('detail-modal-rarity').textContent = card.rarity || 'C';
+            document.getElementById('detail-modal-cost').textContent = `コスト: ${card.cost ?? 0}`;
+            document.getElementById('detail-modal-name').textContent = card.name || '名無しのカード';
+            document.getElementById('detail-modal-attribute').textContent = card.attribute || '火';
+            document.getElementById('detail-modal-desc').textContent = card.desc || '説明文がありません。';
+            
+            const powerVal = card.power ?? card.atk ?? '-';
+            document.getElementById('detail-modal-stats').textContent = `パワー: ${powerVal}`;
+
+            document.getElementById('detail-edit-btn').onclick = () => {
+                closeCardDetailModal();
+                openCardModal(card.id);
+            };
+            document.getElementById('detail-delete-btn').onclick = () => {
+                deleteCardFromFirestore(card.id);
+            };
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeCardDetailModal() {
+            document.getElementById('card-detail-modal').classList.add('hidden');
+        }
+
+        // --- カード作成/編集関連関数 ---
+        function openCardModal(cardId = null) {
+            document.getElementById('card-modal').classList.remove('hidden');
+            document.getElementById('card-form').reset();
+            
+            document.getElementById('image-preview').src = '';
+            document.getElementById('image-preview').classList.add('hidden');
+            document.getElementById('image-preview-placeholder').classList.remove('hidden');
+            document.getElementById('input-image-base64').value = '';
+            document.getElementById('input-image').value = '';
+            document.getElementById('card-id').value = '';
+
+            if (cardId) {
+                document.getElementById('card-modal-title').textContent = 'カード編集';
+                const card = window.cards.find(c => c.id === cardId);
+                if (card) {
+                    document.getElementById('card-id').value = card.id;
+                    document.getElementById('input-name').value = card.name || '';
+                    document.getElementById('input-attribute').value = card.attribute || '火';
+                    document.getElementById('input-rarity').value = card.rarity || 'C';
+                    document.getElementById('input-cost').value = card.cost || 0;
+                    document.getElementById('input-power').value = card.power ?? card.atk ?? '';
+                    document.getElementById('input-desc').value = card.desc || '';
+                    if (card.image) {
+                        document.getElementById('image-preview').src = card.image;
+                        document.getElementById('image-preview').classList.remove('hidden');
+                        document.getElementById('image-preview-placeholder').classList.add('hidden');
+                        document.getElementById('input-image-base64').value = card.image;
+                    }
+                }
+            } else {
+                document.getElementById('card-modal-title').textContent = '新規カード作成';
+            }
+        }
+
+        function closeCardModal() {
+            document.getElementById('card-modal').classList.add('hidden');
+        }
+
+        function previewCardImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    document.getElementById('image-preview').src = base64;
+                    document.getElementById('image-preview').classList.remove('hidden');
+                    document.getElementById('image-preview-placeholder').classList.add('hidden');
+                    document.getElementById('input-image-base64').value = base64;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveCard(event) {
+            event.preventDefault();
+            const cardId = document.getElementById('card-id').value;
+            const cardData = {
+                name: document.getElementById('input-name').value,
+                attribute: document.getElementById('input-attribute').value,
+                rarity: document.getElementById('input-rarity').value,
+                cost: Number(document.getElementById('input-cost').value),
+                power: document.getElementById('input-power').value !== '' ? Number(document.getElementById('input-power').value) : null,
+                desc: document.getElementById('input-desc').value,
+                image: document.getElementById('input-image-base64').value || ''
+            };
+            
+            closeCardModal();
+            window.saveCardToFirestore(cardData, cardId || null);
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('cards-grid');
+            const searchVal = document.getElementById('card-search').value.toLowerCase();
+            grid.innerHTML = '';
+
+            const filtered = (window.cards || []).filter(c => 
+                (c.name && c.name.toLowerCase().includes(searchVal)) || 
+                (c.desc && c.desc.toLowerCase().includes(searchVal)) ||
+                (c.attribute && c.attribute.toLowerCase().includes(searchVal))
+            );
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">カードが見つかりません</div>`;
+                return;
+            }
+
+            filtered.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = "bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden card-glow flex flex-col transition hover:border-indigo-500/60 group";
+                cardEl.innerHTML = `
+                    <div onclick="openCardDetailModal('${card.id}')" class="w-full tcg-card-frame bg-slate-950 flex items-center justify-center relative overflow-hidden cursor-pointer">
+                        ${card.image ? `<img src="${card.image}" class="w-full h-full object-contain group-hover:scale-105 transition duration-300">` : `<div class="text-slate-700 flex flex-col items-center"><i data-lucide="image" class="w-12 h-12"></i><span class="text-[10px] mt-1">NO IMAGE</span></div>`}
+                        
+                        <div class="absolute top-2.5 left-2.5 flex space-x-1.5 pointer-events-none">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-600/90 text-white shadow">${card.rarity || 'C'}</span>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900/90 text-slate-200 border border-slate-700 shadow">C:${card.cost ?? 0}</span>
+                        </div>
+
+                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-3 pt-6 flex justify-between items-end">
+                            <div>
+                                <h3 class="font-bold text-sm text-white truncate max-w-[180px]">${card.name}</h3>
+                                <p class="text-[10px] text-slate-400">${card.attribute || '火'}</p>
+                            </div>
+                            <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded-lg font-bold border border-indigo-500/30">詳細</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(cardEl);
+            });
+            lucide.createIcons();
+        }
+
+        document.getElementById('card-search').addEventListener('input', renderCards);
+
+        // --- デッキビルダー関連関数 ---
+        function openDeckModal(deckId = null) {
+            document.getElementById('deck-modal').classList.remove('hidden');
+            document.getElementById('deck-id').value = '';
+            document.getElementById('deck-name').value = '';
+            document.getElementById('deck-author').value = '';
+            document.getElementById('deck-desc').value = '';
+            document.getElementById('deck-image-base64').value = '';
+            document.getElementById('deck-image-input').value = '';
+            document.getElementById('deck-pool-search').value = '';
+            window.currentDeckCards = [];
+
+            if (deckId) {
+                const deck = window.decks.find(d => d.id === deckId);
+                if (deck) {
+                    document.getElementById('deck-id').value = deck.id;
+                    document.getElementById('deck-name').value = deck.name || '';
+                    document.getElementById('deck-author').value = deck.author || '';
+                    document.getElementById('deck-desc').value = deck.desc || '';
+                    if (deck.image) {
+                        document.getElementById('deck-image-base64').value = deck.image;
+                    }
+                    window.currentDeckCards = [...(deck.cards || [])];
+                }
+            }
+            renderDeckBuilderPool();
+        }
+
+        function closeDeckModal() {
+            document.getElementById('deck-modal').classList.add('hidden');
+        }
+
+        function previewDeckImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('deck-image-base64').value = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function addCardToDeck(cardId) {
+            if (window.currentDeckCards.length >= 50) {
+                alert("デッキには最大50枚までしかカードを入れられません。");
+                return;
+            }
+            window.currentDeckCards.push(cardId);
+            renderDeckBuilderPool();
+        }
+
+        function removeCardFromDeck(index) {
+            window.currentDeckCards.splice(index, 1);
+            renderDeckBuilderPool();
+        }
+
+        function renderDeckBuilderPool() {
+            const poolEl = document.getElementById('deck-card-pool');
+            const selectedEl = document.getElementById('deck-selected-list');
+            const countDisplay = document.getElementById('deck-count-display');
+            const validationMsg = document.getElementById('deck-validation-msg');
+            const saveBtn = document.getElementById('deck-save-btn');
+            const searchVal = document.getElementById('deck-pool-search').value.toLowerCase();
+
+            const count = window.currentDeckCards.length;
+            countDisplay.textContent = count;
+
+            if (count === 50) {
+                validationMsg.textContent = "✓ 50枚到達 (保存可能です)";
+                validationMsg.className = "text-xs font-bold text-emerald-400";
+                saveBtn.disabled = false;
+                saveBtn.className = "px-6 py-2 rounded-xl text-sm bg-pink-600 hover:bg-pink-500 text-white font-bold shadow-lg shadow-pink-600/30 transition cursor-pointer";
+            } else if (count < 50) {
+                validationMsg.textContent = `あと ${50 - count} 枚必要です`;
+                validationMsg.className = "text-xs font-bold text-amber-400";
+                saveBtn.disabled = true;
+                saveBtn.className = "px-6 py-2 rounded-xl text-sm bg-slate-700 text-slate-400 font-bold cursor-not-allowed transition";
+            } else {
+                validationMsg.textContent = `枚数が ${count - 50} 枚オーバーしています`;
+                validationMsg.className = "text-xs font-bold text-rose-400";
+                saveBtn.disabled = true;
+                saveBtn.className = "px-6 py-2 rounded-xl text-sm bg-slate-700 text-slate-400 font-bold cursor-not-allowed transition";
+            }
+
+            poolEl.innerHTML = '';
+            const filteredCards = (window.cards || []).filter(card => 
+                (card.name && card.name.toLowerCase().includes(searchVal)) ||
+                (card.attribute && card.attribute.toLowerCase().includes(searchVal))
+            );
+
+            if (filteredCards.length === 0) {
+                poolEl.innerHTML = `<div class="text-center py-8 text-xs text-slate-600">一致するカードが見つかりません</div>`;
+            } else {
+                filteredCards.forEach(card => {
+                    const item = document.createElement('div');
+                    item.className = "bg-slate-900 border border-slate-800 hover:border-pink-500/50 p-2 rounded-xl flex items-center justify-between cursor-pointer transition";
+                    item.onclick = () => addCardToDeck(card.id);
+                    item.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-10 bg-slate-950 rounded-lg flex items-center justify-center overflow-hidden border border-slate-800">
+                                ${card.image ? `<img src="${card.image}" class="h-full object-contain">` : `<i data-lucide="image" class="w-4 h-4 text-slate-700"></i>`}
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold">${card.name}</div>
+                                <div class="text-[10px] text-slate-400">コスト: ${card.cost} | POW: ${card.power ?? card.atk ?? '-'}</div>
+                            </div>
+                        </div>
+                        <span class="text-xs bg-pink-500/20 text-pink-300 px-2 py-1 rounded-lg font-bold">+ 追加</span>
+                    `;
+                    poolEl.appendChild(item);
+                });
+            }
+
+            selectedEl.innerHTML = '';
+            if (window.currentDeckCards.length === 0) {
+                selectedEl.innerHTML = `<div class="text-center py-8 text-xs text-slate-600">カードが選択されていません</div>`;
+            } else {
+                window.currentDeckCards.forEach((cardId, index) => {
+                    const card = window.cards.find(c => c.id === cardId);
+                    if (!card) return;
+                    const item = document.createElement('div');
+                    item.className = "bg-slate-900 border border-slate-800 p-2 rounded-xl flex items-center justify-between";
+                    item.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] text-slate-500 w-4">${index + 1}.</span>
+                            <div class="w-8 h-10 bg-slate-950 rounded-lg flex items-center justify-center overflow-hidden border border-slate-800">
+                                ${card.image ? `<img src="${card.image}" class="h-full object-contain">` : `<i data-lucide="image" class="w-4 h-4 text-slate-700"></i>`}
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold">${card.name}</div>
+                                <div class="text-[10px] text-slate-400">コスト: ${card.cost}</div>
+                            </div>
+                        </div>
+                        <button onclick="removeCardFromDeck(${index})" class="text-xs bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 px-2 py-1 rounded-lg font-bold transition">削除</button>
+                    `;
+                    selectedEl.appendChild(item);
+                });
+            }
+            lucide.createIcons();
+        }
+
+        function saveDeck() {
+            if (window.currentDeckCards.length !== 50) return;
+            const deckId = document.getElementById('deck-id').value;
+            const deckName = document.getElementById('deck-name').value.trim() || "名無しのデッキ";
+            const deckAuthor = document.getElementById('deck-author').value.trim() || "名無しのビルダー";
+            const deckDesc = document.getElementById('deck-desc').value.trim() || "";
+            const deckImage = document.getElementById('deck-image-base64').value || "";
+
+            const deckData = {
+                name: deckName,
+                author: deckAuthor,
+                desc: deckDesc,
+                image: deckImage,
+                cards: window.currentDeckCards,
+                updatedAt: new Date().toISOString()
+            };
+
+            closeDeckModal();
+            window.saveDeckToFirestore(deckData, deckId || null);
+        }
+
+        function renderDecks() {
+            const grid = document.getElementById('decks-grid');
+            grid.innerHTML = '';
+
+            if ((window.decks || []).length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">デッキが登録されていません</div>`;
+                return;
+            }
+
+            window.decks.forEach(deck => {
+                const deckEl = document.createElement('div');
+                deckEl.className = "bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl flex flex-col justify-between";
+                
+                let deckImageHtml = `<div class="w-full h-36 bg-slate-950 rounded-xl flex items-center justify-center border border-slate-800 text-slate-700 mb-3"><i data-lucide="image" class="w-10 h-10"></i></div>`;
+                if (deck.image) {
+                    deckImageHtml = `<div class="w-full h-36 bg-slate-950 rounded-xl flex items-center justify-center overflow-hidden border border-slate-800 mb-3"><img src="${deck.image}" class="h-full object-contain"></div>`;
+                }
+
+                deckEl.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-lg text-pink-300">${deck.name}</h3>
+                                <p class="text-xs text-slate-400">作成者: <span class="text-slate-200 font-bold">${deck.author || '不明'}</span></p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="openDeckModal('${deck.id}')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                <button onclick="deleteDeckFromFirestore('${deck.id}')" class="p-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-xl transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+
+                        ${deckImageHtml}
+
+                        <p class="text-xs text-slate-300 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 mb-3 min-h-[3rem] line-clamp-2">${deck.desc || '説明文はありません。'}</p>
+                        
+                        <p class="text-xs text-slate-400 mb-2">登録枚数: <span class="text-white font-bold">${deck.cards ? deck.cards.length : 0}</span> / 50枚</p>
+                        
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 max-h-36 overflow-y-auto space-y-1.5">
+                            ${renderDeckCardSummary(deck.cards)}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(deckEl);
+            });
+            lucide.createIcons();
+        }
+
+        function renderDeckCardSummary(cardIds) {
+            if (!cardIds || cardIds.length === 0) return `<div class="text-xs text-slate-600 text-center py-2">カードがありません</div>`;
+            const counts = {};
+            cardIds.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
+
+            let html = '';
+            for (const [cardId, count] of Object.entries(counts)) {
+                const card = window.cards.find(c => c.id === cardId);
+                const cardName = card ? card.name : "不明なカード";
+                html += `<div class="flex justify-between items-center text-xs px-2 py-1 bg-slate-900 rounded-lg">
+                    <span class="truncate pr-2">${cardName}</span>
+                    <span class="font-bold text-pink-400">× ${count}</span>
+                </div>`;
+            }
+            return html;
+        }
+    </script>
+</body>
+</html>
